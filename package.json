@@ -1,0 +1,23 @@
+{
+  "name": "gvg_api",
+  "version": "1.0.0",
+  "description": "Api proyecto intercruises",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HeraWer/gvg_api.git"
+  },
+  "author": "Jonatan Valle",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HeraWer/gvg_api/issues"
+  },
+  "homepage": "https://github.com/HeraWer/gvg_api#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongoose": "^5.9.2"
+  }
+}
