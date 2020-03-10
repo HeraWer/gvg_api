@@ -15,6 +15,12 @@ router.get("/getUser", async (req, res) => {
     })
 });
 
+router.get("/login", async (req, res) => {
+    LoginUser.findOne({username: req.body.username}, {password: req.body.password}).then(result => {
+        res.send(true);
+    })
+})
+
 router.post("/newUser", (req, res) => {
     const user = new LoginUser({
         username: req.body.username,
