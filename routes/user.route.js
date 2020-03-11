@@ -16,9 +16,21 @@ router.get("/getUser", async (req, res) => {
 });
 
 router.get("/login", async (req, res) => {
-    LoginUser.findOne({username: req.body.username}, {password: req.body.password}).then(result => {
-        res.send(true);
+    var loginUser = ({
+        username: req.body.username,
+        password: req.body.password
     })
+
+    console.log(loginUser);
+
+    LoginUser.findOne(loginUser).then(result => {
+        if(result) {
+            res.send(true);
+        }else {
+            res.send(false);
+        }
+    })
+
 })
 
 router.post("/newUser", (req, res) => {
@@ -30,10 +42,10 @@ router.post("/newUser", (req, res) => {
     user
         .save()
         .then(result => {
-            console.log(result);
+            res.send("Usuario creado correctamente");
         })
         .catch(err => {
-            console.log(err);
+            res.send("No se a podido crear el usuario");
         });
 });
 
