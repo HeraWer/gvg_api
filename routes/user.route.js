@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const jwt = require('jsonwebtoken');
+const llave = require('../config/config');
 
 const LoginUser = require("../schemas/LoginUser");
 
@@ -21,11 +23,16 @@ router.get("/login", async (req, res) => {
         password: req.body.password
     })
 
-    console.log(loginUser);
+    var token = jwt.sign(llave.key, loginUser.password);
+
+    const jsonToken = {
+        token: token
+    }
 
     LoginUser.findOne(loginUser).then(result => {
+
         if(result) {
-            res.send(true);
+            res.send(jsonToken)
         }else {
             res.send(false);
         }
@@ -55,7 +62,7 @@ router.delete("/deleteUser", async (req, res) => {
     })
 });
 
-router.post("/updateUser", async(req, res) => {
+router.post("/updateUser", async (req, res) => {
     LoginUser.findOneAndUpdate({username: req.body.username}, {password: req.body.password}).then(result => {
         res.send("Usuario modificado correctamente")
     })
