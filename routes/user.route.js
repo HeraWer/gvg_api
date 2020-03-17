@@ -17,12 +17,15 @@ router.get("/getUser", async (req, res) => {
     })
 });
 
-router.get("/login", async (req, res) => {
+router.post("/login", async (req, res) => {
+    console.log(req.body.username, req.body.password);
     var loginUser = ({
         username: req.body.username,
         password: req.body.password
     })
 
+    //res.send(loginUser);
+    
     var token = jwt.sign(llave.key, loginUser.password);
 
     const jsonToken = {
@@ -30,7 +33,7 @@ router.get("/login", async (req, res) => {
     }
 
     LoginUser.findOne(loginUser).then(result => {
-
+        console.log("Resultado: "result);
         if(result) {
             res.send(jsonToken)
         }else {
