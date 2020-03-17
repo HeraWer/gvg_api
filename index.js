@@ -7,14 +7,14 @@
 const express = require("express");
 const app = express();
 const mongoose = require('mongoose');
-const config = require("./config/config");
+require("dotenv").config();
 const routeUser = require("./routes/user.route");
 
 app.use(express.urlencoded({ extended: true}));
 app.use(express.json());
 
 // URL para mongo atlas, variables del fichero config.js
-const url = "mongodb+srv://" + config.atlasUsername + ":" + config.atlasPassword + "@projectintercruises-gpdno.mongodb.net/intercruises?retryWrites=true&w=majority";
+const url = "mongodb+srv://" + process.env.atlasUsername + ":" + process.env.atlasPassword + "@projectintercruises-gpdno.mongodb.net/intercruises?retryWrites=true&w=majority";
 
 // Conexion a la base de datos.
 mongoose
