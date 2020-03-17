@@ -1,41 +1,40 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const llave = require('../config/config');
+require("dotenv").config();
 
-const LoginUser = require("../schemas/LoginUser");
+const User = require("../schemas/User");
 
 router.get("/allUsers", async (req, res) => {
-    LoginUser.find().then(result => {
+    User.find().then(result => {
         res.send(result);
     })
 });
 
 router.get("/getUser", async (req, res) => {
-    LoginUser.findOne({username: req.body.username}).then(result => {
+    User.findOne({username: req.body.username}).then(result => {
         res.send(result);
     })
 });
 
 router.post("/login", async (req, res) => {
-    console.log(req.body.username, req.body.password);
+
     var loginUser = ({
         username: req.body.username,
         password: req.body.password
     })
+    console.log(loginUser.username);
+    console.log(loginUser.password);
 
-    //res.send(loginUser);
-    
-    var token = jwt.sign(llave.key, loginUser.password);
+    var token = jwt.sign(loginUser.username, process.env.SECRETO);
 
-    const jsonToken = {
-        token: token
-    }
+    User.findOne(loginUser).then(result => {
 
-    LoginUser.findOne(loginUser).then(result => {
-        console.log("Resultado: "result);
+        console.log(result);
+        console.log(token);
+
         if(result) {
-            res.send(jsonToken)
+            res.send(token);
         }else {
             res.send(false);
         }
@@ -44,7 +43,7 @@ router.post("/login", async (req, res) => {
 })
 
 router.post("/newUser", (req, res) => {
-    const user = new LoginUser({
+    const user = new User({
         username: req.body.username,
         password: req.body.password
     });
@@ -60,13 +59,13 @@ router.post("/newUser", (req, res) => {
 });
 
 router.delete("/deleteUser", async (req, res) => {
-    LoginUser.deleteOne({username: req.body.username}).then(result => {
+    User.deleteOne({username: req.body.username}).then(result => {
         res.send("Usuario eliminado correctamente");
     })
 });
 
 router.post("/updateUser", async (req, res) => {
-    LoginUser.findOneAndUpdate({username: req.body.username}, {password: req.body.password}).then(result => {
+    User.findOneAndUpdate({username: req.body.username}, {password: req.body.password}).then(result => {
         res.send("Usuario modificado correctamente")
     })
 });
