@@ -37,13 +37,13 @@ app.listen(PORT, () =>
     console.log(`El servidor está inicializado en el puerto ${PORT}`));
 
 // Cors
-/*app.use(function (req, res, next) {
+app.use(function (req, res, next) {
     res.setHeader('Acces-Control-Allow-Origin', '*');
     res.setHeader('Acces-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
     res.setHeader('Acces-Control-Allow-Headers', '*');
     res.setHeader('Acces-Controll-Allow-Credentials', true);
     next();
-})*/
+})
 
 
 // Aqui le decimos que usa la ruta a partir de raiz y lo que se encuentre en el user.route.js
