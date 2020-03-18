@@ -17,12 +17,17 @@ app.use(express.json());
 const url = "mongodb+srv://" + process.env.atlasUsername + ":" + process.env.atlasPassword + "@projectintercruises-gpdno.mongodb.net/intercruises?retryWrites=true&w=majority";
 
 // Conexion a la base de datos.
+if(process.env.atlasUsername && process.env.atlasPassword){
 mongoose
     .connect(url,{useNewUrlParser: true, useUnifiedTopology: true},
         () => console.log("connected to database!"))
     .catch((err) => {
         throw err;
     });
+} else {
+    console.log("No ha podido conectarse a la base de datos");
+}
+
 
 // Puerto de Heroku si no abre con el 8080
 const PORT = process.env.PORT || 8080;
