@@ -22,17 +22,12 @@ router.post("/login", async (req, res) => {
         username: req.body.username,
         password: req.body.password
     })
-    console.log(loginUser.username);
-    console.log(loginUser.password);
-
     var token = jwt.sign(loginUser.username, process.env.SECRETO);
 
     User.findOne(loginUser).then(result => {
 
-        console.log(result);
-        console.log(token);
         if(result) {
-            res.send(token);
+            res.send(JSON.parse('{"token":"'+token+'"}'));
         }else {
             res.send(false);
         }
