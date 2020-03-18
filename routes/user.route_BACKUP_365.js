@@ -24,14 +24,19 @@ router.post("/login", async (req, res) => {
         password: req.body.password
     })
     var token = jwt.sign(loginUser.username, process.env.SECRETO);
-    var message = "Este usuario no existe en la base de datos";
 
     User.findOne(loginUser).then(result => {
 
+<<<<<<< HEAD
+        console.log(result);
+        console.log(token);
+
+=======
+>>>>>>> 832065db865f14a68890b09fca859fe0b36fd0dd
         if(result) {
             res.send(JSON.parse('{"token":"'+token+'"}'));
         }else {
-            res.send(JSON.parse('{"message":"'+message+'"}'));
+            res.send(false);
         }
     })
 
