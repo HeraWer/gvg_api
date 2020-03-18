@@ -18,10 +18,13 @@ const url = "mongodb+srv://" + process.env.atlasUsername + ":" + process.env.atl
 
 // Conexion a la base de datos.
 mongoose
-    .connect(url,{useNewUrlParser: true, useUnifiedTopology: true},
+    .connect(MONGODB_URI || url , {
+        useNewUrlParser: true, 
+        useUnifiedTopology: true
+    },
         () => console.log("connected to database!"))
     .catch((err) => {
-        console.log("No ha podido conectarse a la base de datos");
+            console.log("No ha podido conectarse a la base de datos");
         throw err;
     });
 
