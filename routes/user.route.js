@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 require("dotenv").config();
 
 const User = require("../schemas/User");
+const Event = require("../schemas/Event");
 
 router.get("/allUsers", async (req, res) => {
     User.find().then(result => {
@@ -22,6 +23,10 @@ router.post("/login", async (req, res) => {
         username: req.body.username,
         password: req.body.password
     })
+
+    console.log(loginUser.username);
+    console.log(loginUser.password);
+
     var token = jwt.sign(loginUser.username, process.env.SECRETO);
 
     User.findOne(loginUser).then(result => {
@@ -60,6 +65,12 @@ router.delete("/deleteUser", async (req, res) => {
 router.post("/updateUser", async (req, res) => {
     User.findOneAndUpdate({username: req.body.username}, {password: req.body.password}).then(result => {
         res.send("Usuario modificado correctamente")
+    })
+});
+
+router.get("/allEvents", async (req, res) => {
+    Event.find().then(result => {
+        res.send(result);
     })
 });
 
