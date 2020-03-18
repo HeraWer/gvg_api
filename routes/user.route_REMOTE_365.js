@@ -18,7 +18,6 @@ router.get("/getUser", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
-
     var loginUser = ({
         username: req.body.username,
         password: req.body.password
@@ -27,12 +26,6 @@ router.post("/login", async (req, res) => {
 
     User.findOne(loginUser).then(result => {
 
-<<<<<<< HEAD
-        console.log(result);
-        console.log(token);
-
-=======
->>>>>>> 832065db865f14a68890b09fca859fe0b36fd0dd
         if(result) {
             res.send(JSON.parse('{"token":"'+token+'"}'));
         }else {

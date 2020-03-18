@@ -6,6 +6,7 @@
 // A si es como se importan las cosas en node.js
 const express = require("express");
 const app = express();
+const cors = require('cors');
 const mongoose = require('mongoose');
 require("dotenv").config();
 const routeUser = require("./routes/user.route");
@@ -18,18 +19,34 @@ const url = "mongodb+srv://" + process.env.atlasUsername + ":" + process.env.atl
 
 // Conexion a la base de datos.
 mongoose
-    .connect(url,{useNewUrlParser: true, useUnifiedTopology: true},
+    .connect(process.env.MONGODB_URI || url , {
+        useNewUrlParser: true, 
+        useUnifiedTopology: true
+    },
         () => console.log("connected to database!"))
     .catch((err) => {
+            console.log("No ha podido conectarse a la base de datos");
         throw err;
     });
 
-// Puerto de Heroku si no abre con el 3000
-const PORT = process.env.PORT || 3000;
 
-// Cuando hacemos comando "node index.js" se nos iniciara el puerto 3000 si no esta el otro y lo tendra abierto escuchando
+// Puerto de Heroku si no abre con el 8080
+const PORT = process.env.PORT || 8080;
+
+// Cuando hacemos comando "node index.js" se nos iniciara el puerto 8080 si no esta el otro y lo tendra abierto escuchando
 app.listen(PORT, () => 
-    console.log(`El servidor está inicializado en el puerto ${3000}`));
+    console.log(`El servidor está inicializado en el puerto ${PORT}`));
+
+// Cors
+app.use(cors())
+/*app.use(function (req, res, next) {
+    res.setHeader('Acces-Control-Allow-Origin', '*');
+    res.setHeader('Acces-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+    res.setHeader('Acces-Control-Allow-Headers', '*');
+    res.setHeader('Acces-Controll-Allow-Credentials', true);
+    next();
+})*/
+
 
 // Aqui le decimos que usa la ruta a partir de raiz y lo que se encuentre en el user.route.js
 app.use("/", routeUser);
