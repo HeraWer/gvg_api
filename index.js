@@ -18,7 +18,7 @@ const url = "mongodb+srv://" + process.env.atlasUsername + ":" + process.env.atl
 
 // Conexion a la base de datos.
 mongoose
-    .connect(MONGODB_URI || url , {
+    .connect(process.env.MONGODB_URI || url , {
         useNewUrlParser: true, 
         useUnifiedTopology: true
     },
