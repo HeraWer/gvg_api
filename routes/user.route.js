@@ -5,9 +5,19 @@ require("dotenv").config();
 
 const User = require("../schemas/User");
 const Event = require("../schemas/Event");
+const Role = require("../schemas/Role");
+const Location = require("../schemas/Location");
+const Message = require("../schemas/Message");
+
 
 router.get("/allUsers", async (req, res) => {
     User.find().then(result => {
+        res.send(result);
+    })
+});
+
+router.get("/allRoles", async (req, res) => {
+    Role.find().then(result => {
         res.send(result);
     })
 });
@@ -75,5 +85,6 @@ router.get("/allEvents", async (req, res) => {
         res.send(result);
     })
 });
+
 
 module.exports = router;
