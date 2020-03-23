@@ -22,7 +22,7 @@ router.get("/allRoles", async (req, res) => {
     })
 });
 
-router.get("/getUser", async (req, res) => {
+router.post("/getUser", async (req, res) => {
     User.findOne({username: req.body.username}).then(result => {
         res.send(result);
     })
