@@ -24,17 +24,27 @@ var Schema = mongoose.Schema;
 }, {versionKey: false});*/
 
 var userSchema = mongoose.Schema ({
-    /*username: {type: String},
-    password: {type: String},
-    name: {type: String},
-    lastname: {type: String},
-    DNI: {type: String},
-    birthdate: {type: String},
-    location: {type: Schema.Types.ObjectId, ref: 'Location'},
-    photo: {type: String},
-    role: {type: Schema.Types.ObjectId, ref: 'Role'},
+    username: String,
+    password: String,
+    name: String,
+    lastname: String,
+    DNI: String,
+    birthdate: String,
+    location: {
+        longitude: String,
+        latitude: String,
+        city: String,
+        postal_code: String,
+        adress: String
+    },
+    photo: {type: Buffer},
+    role: {
+        role_name: String
+    },
     active: {type: Boolean},
-    unavailability: {type: Boolean}*/
+    unavailability: {type: Boolean}
 });
+
+
 
 module.exports = mongoose.model("User", userSchema);

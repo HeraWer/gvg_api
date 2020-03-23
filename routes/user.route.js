@@ -9,6 +9,23 @@ const Role = require("../schemas/Role");
 const Location = require("../schemas/Location");
 const Message = require("../schemas/Message");
 
+router.post("/setPhoto", async(req, res) => {
+    //var photo = BSON.req.body.photo;
+    User.findOneAndUpdate({username: req.body.username}, {photo: req.body.photo}).then(result => {
+        res.send("Foto subida correctamente")
+    })
+});
+
+router.get("/getPhoto", async(req, res) => {
+    User.findOne({username: req.body.username})
+    .select('photo')
+    .then(result => {
+        console.log(result);
+        var photo = JSON.stringify(result);
+        var photo2 = JSON.parse(photo);
+        res.send(JSON.parse('{"photo":"'+photo2+'"}'));
+    })
+});
 
 router.get("/allUsers", async (req, res) => {
     User.find().then(result => {
