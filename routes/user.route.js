@@ -1,16 +1,17 @@
 const express = require("express");
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 require("dotenv").config();
-const mongoose = require('mongoose');
+
 const multer = require('multer');
-const GridFsStorage = require('multer-gridfs-storage');
-const Grid = require('gridfs-stream');
-const methodOverride = require('method-override');
+var upload = multer({ dest: 'uploads/' })
 const bodyParser = require('body-parser');
 const path = require('path');
 require("dotenv").config();
 var fs = require('fs');
 const stream = require('stream');
+
+var userLogged;
 
 const User = require("../schemas/User");
 const Event = require("../schemas/Event");
@@ -18,9 +19,25 @@ const Role = require("../schemas/Role");
 const Location = require("../schemas/Location");
 const Message = require("../schemas/Message");
 
+var storage = multer.diskStorage(
+    {
+        destination: 'uploads/',
+        filename: function ( req, file, cb ) {
+            //req.body is empty...
+            //How could I get the new_file_name property sent from client here?
+            cb(null,userLogged+".png");
+        }
+    }
+);
 
-router.post('/setPhoto',async (req, res) => {
-  var foto = req.body.file();
+upload = multer({ storage: storage })
+
+router.post('/setPhoto', upload.single('avatar'), function (req, res, next) {
+  // req.file is the `avatar` file
+  // req.body will hold the text fields, if there were any
+  
+  //console.log(req.file);
+  //writeFile(req.file);
 });
 
 router.get("/getPhoto", async(req, res) => {
@@ -48,12 +65,12 @@ router.get("/allRoles", async (req, res) => {
 
 router.post("/getUser", async (req, res) => {
     User.findOne({username: req.body.username}).then(result => {
+        console.log(result);
         res.send(result);
     })
 });
 
 router.post("/login", async (req, res) => {
-
     var loginUser = ({
         username: req.body.username,
         password: req.body.password
@@ -74,7 +91,7 @@ router.post("/login", async (req, res) => {
         }
     })
 
-})
+});
 
 router.post("/newUser", (req, res) => {
     const user = new User({
