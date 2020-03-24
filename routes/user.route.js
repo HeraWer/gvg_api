@@ -1,7 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const jwt = require('jsonwebtoken');
 require("dotenv").config();
+const mongoose = require('mongoose');
+const multer = require('multer');
+const GridFsStorage = require('multer-gridfs-storage');
+const Grid = require('gridfs-stream');
+const methodOverride = require('method-override');
+const bodyParser = require('body-parser');
+const path = require('path');
+require("dotenv").config();
+var fs = require('fs');
+const stream = require('stream');
 
 const User = require("../schemas/User");
 const Event = require("../schemas/Event");
@@ -9,11 +18,9 @@ const Role = require("../schemas/Role");
 const Location = require("../schemas/Location");
 const Message = require("../schemas/Message");
 
-router.post("/setPhoto", async(req, res) => {
-    //var photo = BSON.req.body.photo;
-    User.findOneAndUpdate({username: req.body.username}, {photo: req.body.photo}).then(result => {
-        res.send("Foto subida correctamente")
-    })
+
+router.post('/setPhoto',async (req, res) => {
+  var foto = req.body.file();
 });
 
 router.get("/getPhoto", async(req, res) => {
