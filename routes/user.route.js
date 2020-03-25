@@ -116,8 +116,8 @@ router.delete("/deleteUser", async (req, res) => {
 });
 
 router.post("/updateUser", async (req, res) => {
-    User.findOneAndUpdate({username: req.body.username}, {password: req.body.password}).then(result => {
-        res.send("Usuario modificado correctamente")
+    User.findOneAndUpdate({username: req.body.username}, {username: req.body.updateUser.username, password: req.body.updateUser.password}, {new: true}).then(result => {
+        res.send(result);
     })
 });
 
