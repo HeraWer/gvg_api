@@ -42,16 +42,17 @@ const url = "mongodb+srv://" + process.env.atlasUsername + ":" + process.env.atl
 
 var conn = mongoose
 .connect(process.env.MONGODB_URI || url , {
-    useNewUrlParser: true, 
-    useUnifiedTopology: true
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 },
 ()=> { 
     console.log("connected to database!")
     gfs = gridfs(mongoose.connection.db, mongoose.mongo);
+
 })
 .catch((err) => {
-    console.log("No ha podido conectarse a la base de datos");
-    throw err;
+  console.log("No ha podido conectarse a la base de datos");
+  throw err;
 });
 
 var app = express();
@@ -59,7 +60,7 @@ gridfs.mongo = mongoose.mongo;
 var connection = mongoose.connection;
 
 var storage = multer.diskStorage(
-{ 
+  {
     destination: 'uploads/',
     filename: function ( req, file, cb ) {
         //req.body is empty...
@@ -68,7 +69,8 @@ var storage = multer.diskStorage(
     }
 });
 
-upload = multer({ storage: storage })
+
+  function readFile () {
 
 function writeFile (file) {
 // use default bucket
@@ -83,9 +85,12 @@ Attachment.write(options, readStream, (error, file) => {
 }
 
 
-/*
---------------------------------------------- AJAX METHODS -------------------------------------------------------------------
-*/
+
+  }
+
+  /*
+  --------------------------------------------- AJAX METHODS -------------------------------------------------------------------
+  */
 
 
 router.post('/setPhoto', upload.single('avatar'), function (req, res, next) {
@@ -108,29 +113,29 @@ var gfs = gridfs(connection.db);
 
 });
 
-router.get("/allUsers", async (req, res) => {
+  router.get("/allUsers", async (req, res) => {
     User.find().then(result => {
-        res.send(result);
+      res.send(result);
     })
-});
+  });
 
-router.get("/allRoles", async (req, res) => {
+  router.get("/allRoles", async (req, res) => {
     Role.find().then(result => {
-        res.send(result);
+      res.send(result);
     })
-});
+  });
 
-router.post("/getUser", async (req, res) => {
+  router.post("/getUser", async (req, res) => {
     User.findOne({username: req.body.username}).then(result => {
-        console.log(result);
-        res.send(result);
+      console.log(result);
+      res.send(result);
     })
-});
+  });
 
-router.post("/login", async (req, res) => {
+  router.post("/login", async (req, res) => {
     var loginUser = ({
-        username: req.body.username,
-        password: req.body.password
+      username: req.body.username,
+      password: req.body.password
     })
 
     console.log(loginUser.username);
@@ -141,49 +146,67 @@ router.post("/login", async (req, res) => {
 
     User.findOne(loginUser).then(result => {
 
-        if(result) {
-            userLogged = loginUser.username;
-            res.send(JSON.parse('{"token":"'+token+'"}'));
-        }else {
-            res.send(JSON.parse('{"message":"'+message+'"}'));
-        }
+      if(result) {
+        userLogged = loginUser.username;
+        res.send(JSON.parse('{"token":"'+token+'"}'));
+      }else {
+        res.send(JSON.parse('{"message":"'+message+'"}'));
+      }
     })
 
-});
+  });
 
-router.post("/newUser", (req, res) => {
+  router.post("/newUser", (req, res) => {
     const user = new User({
-        username: req.body.username,
-        password: req.body.password
+      username: req.body.username,
+      password: req.body.password,
+      name: req.body.name,
+      lastname: req.body.lastname,
+      DNI: req.body.dni,
+      birthdate: req.body.birthdate,
+      location: {
+        city: req.body.location.city,
+        adress: req.body.location.address
+      },
+      //        photo: req.body.photo.data,
+      role: req.body.role,
+      active: req.body.active,
+      unavailability: req.body.unavailability
     });
 
     user
     .save()
     .then(result => {
-        res.send("Usuario creado correctamente");
+      res.send("Usuario creado correctamente");
     })
     .catch(err => {
-        res.send("No se a podido crear el usuario");
+      res.send("No se a podido crear el usuario");
     });
-});
+  });
 
-router.delete("/deleteUser", async (req, res) => {
+  router.delete("/deleteUser", async (req, res) => {
     User.deleteOne({username: req.body.username}).then(result => {
-        res.send("Usuario eliminado correctamente");
+      res.send("Usuario eliminado correctamente");
     })
-});
+  });
 
 router.post("/updateUser", async (req, res) => {
-    User.findOneAndUpdate({username: req.body.username}, {password: req.body.password}).then(result => {
-        res.send("Usuario modificado correctamente")
-    })
-});
-
-router.get("/allEvents", async (req, res) => {
-    Event.find().then(result => {
+    User.findOneAndUpdate({username: req.body.username}, {username: req.body.updateUser.username, password: req.body.updateUser.password}, {new: true}).then(result => {
         res.send(result);
     })
-});
+  });
+
+  router.get("/allEvents", async (req, res) => {
+    Event.find().then(result => {
+      res.send(result);
+    })
+  });
+
+  router.get("/allEvents", async (req, res) => {
+    Event.find().then(result => {
+      res.send(result);
+    })
+  });
 
 
-module.exports = router;
+  module.exports = router;
