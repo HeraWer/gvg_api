@@ -69,8 +69,7 @@ var storage = multer.diskStorage(
     }
 });
 
-
-  function readFile () {
+upload = multer({ storage: storage })
 
 function writeFile (file) {
 // use default bucket
@@ -86,7 +85,7 @@ Attachment.write(options, readStream, (error, file) => {
 
 
 
-  }
+  
 
   /*
   --------------------------------------------- AJAX METHODS -------------------------------------------------------------------
