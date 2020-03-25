@@ -37,21 +37,6 @@ var conn = mongoose
 
     Grid.mongo = mongoose.mongo;
 
-function writeFile (fotoPath) {
-   // Init stream
-  var gfs = Grid(conn.db);  
-  
-  var writeStream = gfs.createWriteStream({
-    // optional filename: "set filename"
-  });
-
-  fs.createReadStream(fotoPath).pipe(writeStream);
-
-  writeStream.on('close',function (file) {
-    console.log(file.filename + 'writted to db');
-  });
-}
-
 // Puerto de Heroku si no abre con el 8080
 const PORT = process.env.PORT || 8080;
 
