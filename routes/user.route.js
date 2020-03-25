@@ -62,34 +62,30 @@ var storage = multer.diskStorage(
 { 
     destination: 'uploads/',
     filename: function ( req, file, cb ) {
-            //req.body is empty...
-            //How could I get the new_file_name property sent from client here?
-            cb(null,userLogged+".png");
-        }
-    });
+        //req.body is empty...
+        //How could I get the new_file_name property sent from client here?
+        cb(null,userLogged+".png");
+    }
+});
 
 upload = multer({ storage: storage })
 
- function writeFile (file) {
-    // use default bucket
-    const Attachment = createModel();
-    // write file to gridfs
-    console.log(userLogged);
-    const readStream = createReadStream("uploads/"+userLogged+".png");
-    const options = ({ filename: userLogged+".png", contentType: 'image/png' });
-    Attachment.write(options, readStream, (error, file) => {
-      //=> {_id: ..., filename: ..., ...}
-    });
-  }
-
-
-
+function writeFile (file) {
+// use default bucket
+const Attachment = createModel();
+// write file to gridfs
+console.log(userLogged);
+const readStream = createReadStream("uploads/"+userLogged+".png");
+const options = ({ filename: userLogged+".png", contentType: 'image/png' });
+Attachment.write(options, readStream, (error, file) => {
+  //=> {_id: ..., filename: ..., ...}
+});
+}
 
 
 /*
 --------------------------------------------- AJAX METHODS -------------------------------------------------------------------
 */
-
 
 
 router.post('/setPhoto', upload.single('avatar'), function (req, res, next) {
@@ -98,38 +94,18 @@ router.post('/setPhoto', upload.single('avatar'), function (req, res, next) {
 });
 
 router.get("/getPhoto", async(req, res) => {
-    var db = new mongo.Db('Intercruises', new mongo.Server(url));  //if you are using mongoDb directily
-    var gfs = gridfs(db,mongo);
-    var rstream = gfs.createReadStream(userLogged+".png");
-    var bufs = [];
-    rstream.on('data', function (chunk) {
-      bufs.push(chunk);
-    }).on('error', function () {
-      res.send();
-    })
-    .on('end', function () { // done
-
-      var fbuf = Buffer.concat(bufs);
-
-      var File = (fbuf.toString('base64'));
-
-      res.send(File);
-
+    console.log('/getPhoto')
+var gfs = gridfs(connection.db);
+// Check file exist on MongoDB
+    gfs.exist({ filename: (userLogged+".png") }, function (err, file) {
+        if (err || !file) {
+            res.send('File Not Found');
+        } else {
+            var readstream = gfs.createReadStream({ filename: (userLogged+".png") });
+            readstream.pipe(res);
+        }
     });
 
-
-    /*    console.log('/getPhoto')
-    var gfs = gridfs(connection.db);
-    // Check file exist on MongoDB
-        gfs.exist({ filename: (userLogged+".png") }, function (err, file) {
-            if (err || !file) {
-                res.send('File Not Found');
-            } else {
-                var readstream = gfs.createReadStream({ filename: (userLogged+".png") });
-                readstream.pipe(res);
-            }
-        });*/
-    
 });
 
 router.get("/allUsers", async (req, res) => {
@@ -180,7 +156,7 @@ router.post("/newUser", (req, res) => {
         username: req.body.username,
         password: req.body.password
     });
-    
+
     user
     .save()
     .then(result => {
