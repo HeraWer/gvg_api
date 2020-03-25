@@ -1,27 +1,9 @@
-/*
- *  Author: Jonatan Valle Corrales
- *  Fecha: 2/3/20
- *  Email: vallejestudiante@gmail.com
-*/
-
 // imports
 const mongoose = require("mongoose");
 var Schema = mongoose.Schema;
-
-// Esquemas donde se mapea sobre las collections de mongo atlas
-/*const User = mongoose.Schema({
-    username: {type: String, required: true, unique: true},
-    password: {type: String, required: true},
-    name: {type: String},
-    lastname: {type: String},
-    DNI: {type: String},
-    birthdate: {type: String},
-    city: {type: String},
-    photo: {type: String},
-    role: {type: String},
-    active: {type: Boolean},
-    unavailability: {type: Boolean}
-}, {versionKey: false});*/
+var filePluginLib = require('mongoose-file');
+var filePlugin = filePluginLib.filePlugin;
+var make_upload_to_model = filePluginLib.make_upload_to_model;
 
 var userSchema = mongoose.Schema ({
     username: String,
@@ -37,8 +19,10 @@ var userSchema = mongoose.Schema ({
         postal_code: String,
         adress: String
     },
-  //  photo: {type: Buffer},
-    role: {type: String},
+    photo: {data: Buffer, contentType: String},
+    role: {
+        role_name: String
+    },
     active: {type: Boolean},
     unavailability: {type: Boolean}
 });
