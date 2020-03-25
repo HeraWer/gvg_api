@@ -72,9 +72,21 @@ router.post("/login", async (req, res) => {
 router.post("/newUser", (req, res) => {
     const user = new User({
         username: req.body.username,
-        password: req.body.password
+        password: req.body.password,
+        name: req.body.name,
+        lastname: req.body.lastname,
+        DNI: req.body.dni,
+        birthdate: req.body.birthdate,
+        location: {
+            city: req.body.location.city,
+            adress: req.body.location.address
+        },
+//        photo: req.body.photo.data,
+        role: req.body.role,
+        active: req.body.active,
+        unavailability: req.body.unavailability
     });
-    
+
     user
         .save()
         .then(result => {
@@ -94,6 +106,12 @@ router.delete("/deleteUser", async (req, res) => {
 router.post("/updateUser", async (req, res) => {
     User.findOneAndUpdate({username: req.body.username}, {password: req.body.password}).then(result => {
         res.send("Usuario modificado correctamente")
+    })
+});
+
+router.get("/allEvents", async (req, res) => {
+    Event.find().then(result => {
+        res.send(result);
     })
 });
 

@@ -37,10 +37,8 @@ var userSchema = mongoose.Schema ({
         postal_code: String,
         adress: String
     },
-    photo: {type: Buffer},
-    role: {
-        role_name: String
-    },
+  //  photo: {type: Buffer},
+    role: {type: String},
     active: {type: Boolean},
     unavailability: {type: Boolean}
 });
