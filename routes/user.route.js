@@ -3,24 +3,29 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 require("dotenv").config();
 
-var Grid = require('gridfs-stream');
+var fs = require('fs'),
+mongo = require('mongodb'),
+gridfs = require('gridfs-stream');
+//Grid = require('gridfs-stream');
+/*gridfs,
+writeStream,
+readStream,
+buffer = "";*/
+
+
+
 var GridFsStorage = require('multer-gridfs-storage');
 const mongoose = require('mongoose');
-var mongo = require('mongodb');
-var Grid = require('gridfs-stream');
 const index = require("../index");
 const multer = require('multer');
 var upload = multer({ dest: 'uploads/' })
 const bodyParser = require('body-parser');
 const path = require('path');
 require("dotenv").config();
-var fs = require('fs');
 const { Readable } = require('stream');
-Grid.mongo = mongoose.mongo;
-var gfs = new Grid("Intercruises",mongoose.mongo);
-//writeStream,
-//readStream,
-buffer = "";
+//Grid.mongo = mongoose.mongo;
+//var gfs = new Grid("Intercruises",mongoose.mongo);
+
 const { createReadStream } = require('fs');
 const { createModel } = require('mongoose-gridfs');
 
@@ -42,15 +47,17 @@ var conn = mongoose
 },
 ()=> { 
     console.log("connected to database!")
-    gfs = new Grid(mongoose.connection.db, mongoose.mongo);
+    gfs = gridfs(mongoose.connection.db, mongoose.mongo);
 })
 .catch((err) => {
     console.log("No ha podido conectarse a la base de datos");
     throw err;
 });
 
+var app = express();
+gridfs.mongo = mongoose.mongo;
+var connection = mongoose.connection;
 
-// Custom bucket para definir ruta archivo y nombre
 var storage = multer.diskStorage(
 { 
     destination: 'uploads/',
@@ -63,53 +70,66 @@ var storage = multer.diskStorage(
 
 upload = multer({ storage: storage })
 
-function writeFile () {
-// use default bucket
-const Attachment = createModel();
-
-// write file to gridfs
-console.log(userLogged);
-const readStream = createReadStream("uploads/"+userLogged+".png");
-const options = ({ filename: userLogged+".png", contentType: 'image/png' });
-Attachment.write(options, readStream, (error, file) => {
-  //=> {_id: ..., filename: ..., ...}
-});
-}
-
-function readFile () {
+ function writeFile (file) {
+    // use default bucket
+    const Attachment = createModel();
+    // write file to gridfs
+    console.log(userLogged);
+    const readStream = createReadStream("uploads/"+userLogged+".png");
+    const options = ({ filename: userLogged+".png", contentType: 'image/png' });
+    Attachment.write(options, readStream, (error, file) => {
+      //=> {_id: ..., filename: ..., ...}
+    });
+  }
 
 
-}
+
+
 
 /*
 --------------------------------------------- AJAX METHODS -------------------------------------------------------------------
 */
 
+
+
 router.post('/setPhoto', upload.single('avatar'), function (req, res, next) {
-  // req.file is the `avatar` file
-  // req.body will hold the text fields, if there were any
-  writeFile(req.file);
+    console.log('/setPhoto')
+    writeFile(req.file);
 });
 
 router.get("/getPhoto", async(req, res) => {
-    var db = new mongo.Db('Intercruises', new mongo.Server(url));  //if you are using mongoDb directily                                        
-    var gfs = Grid(db,mongo); 
+    var db = new mongo.Db('Intercruises', new mongo.Server(url));  //if you are using mongoDb directily
+    var gfs = gridfs(db,mongo);
     var rstream = gfs.createReadStream(userLogged+".png");
     var bufs = [];
     rstream.on('data', function (chunk) {
-        bufs.push(chunk);
+      bufs.push(chunk);
     }).on('error', function () {
-        res.send();
+      res.send();
     })
-.on('end', function () { // done
+    .on('end', function () { // done
 
-    var fbuf = Buffer.concat(bufs);
+      var fbuf = Buffer.concat(bufs);
 
-    var File = (fbuf.toString('base64'));
+      var File = (fbuf.toString('base64'));
 
-    res.send(File);
+      res.send(File);
 
-}); 
+    });
+
+
+    /*    console.log('/getPhoto')
+    var gfs = gridfs(connection.db);
+    // Check file exist on MongoDB
+        gfs.exist({ filename: (userLogged+".png") }, function (err, file) {
+            if (err || !file) {
+                res.send('File Not Found');
+            } else {
+                var readstream = gfs.createReadStream({ filename: (userLogged+".png") });
+                readstream.pipe(res);
+            }
+        });*/
+    
 });
 
 router.get("/allUsers", async (req, res) => {
