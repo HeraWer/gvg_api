@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 require("dotenv").config();
+const bodyParser = require('body-parser');
+const rutasProtegidas = express.Router(); 
 
 var fs = require('fs'),
 mongo = require('mongodb'),
@@ -12,24 +14,21 @@ writeStream,
 readStream,
 buffer = "";*/
 
-
-
 var GridFsStorage = require('multer-gridfs-storage');
 const mongoose = require('mongoose');
 const index = require("../index");
 const multer = require('multer');
 var upload = multer({ dest: 'uploads/' })
-const bodyParser = require('body-parser');
 const path = require('path');
 require("dotenv").config();
 const { Readable } = require('stream');
 //Grid.mongo = mongoose.mongo;
 //var gfs = new Grid("Intercruises",mongoose.mongo);
-
 const { createReadStream } = require('fs');
 const { createModel } = require('mongoose-gridfs');
 
 var userLogged;
+var refreshTokens = {};
 
 const User = require("../schemas/User");
 const Event = require("../schemas/Event");
@@ -46,8 +45,8 @@ var conn = mongoose
   useUnifiedTopology: true
 },
 ()=> { 
-    console.log("connected to database!")
-    gfs = gridfs(mongoose.connection.db, mongoose.mongo);
+  console.log("connected to database!")
+  gfs = gridfs(mongoose.connection.db, mongoose.mongo);
 
 })
 .catch((err) => {
@@ -56,18 +55,22 @@ var conn = mongoose
 });
 
 var app = express();
+
+app.use(bodyParser.json()) 
+app.use(bodyParser.urlencoded({ extended: true }))
+
 gridfs.mongo = mongoose.mongo;
 var connection = mongoose.connection;
 
 var storage = multer.diskStorage(
-  {
-    destination: 'uploads/',
-    filename: function ( req, file, cb ) {
+{
+  destination: 'uploads/',
+  filename: function ( req, file, cb ) {
         //req.body is empty...
         //How could I get the new_file_name property sent from client here?
         cb(null,userLogged+".png");
-    }
-});
+      }
+    });
 
 upload = multer({ storage: storage })
 
@@ -85,46 +88,46 @@ Attachment.write(options, readStream, (error, file) => {
 
 
 
-  
+
 
   /*
   --------------------------------------------- AJAX METHODS -------------------------------------------------------------------
   */
 
 
-router.post('/setPhoto', upload.single('avatar'), function (req, res, next) {
+  router.post('/setPhoto', upload.single('avatar'), function (req, res, next) {
     console.log('/setPhoto')
     writeFile(req.file);
-});
+  });
 
-router.get("/getPhoto", async(req, res) => {
+  router.get("/getPhoto", async(req, res) => {
     console.log('/getPhoto')
-var gfs = gridfs(connection.db);
+    var gfs = gridfs(connection.db);
 // Check file exist on MongoDB
-    gfs.exist({ filename: (userLogged+".png") }, function (err, file) {
-        if (err || !file) {
-            res.send('File Not Found');
-        } else {
-            var readstream = gfs.createReadStream({ filename: (userLogged+".png") });
-            readstream.pipe(res);
-        }
-    });
+gfs.exist({ filename: (userLogged+".png") }, function (err, file) {
+  if (err || !file) {
+    res.send('File Not Found');
+  } else {
+    var readstream = gfs.createReadStream({ filename: (userLogged+".png") });
+    readstream.pipe(res);
+  }
+});
 
 });
 
-  router.get("/allUsers", async (req, res) => {
+  router.get("/allUsers",rutasProtegidas, async (req, res) => {
     User.find().then(result => {
       res.send(result);
     })
   });
 
-  router.get("/allRoles", async (req, res) => {
+  router.get("/allRoles",rutasProtegidas, async (req, res) => {
     Role.find().then(result => {
       res.send(result);
     })
   });
 
-  router.post("/getUser", async (req, res) => {
+  router.post("/getUser",rutasProtegidas, async (req, res) => {
     User.findOne({username: req.body.username}).then(result => {
       console.log(result);
       res.send(result);
@@ -137,25 +140,76 @@ var gfs = gridfs(connection.db);
       password: req.body.password
     })
 
-    console.log(loginUser.username);
-    console.log(loginUser.password);
+    var username = loginUser.username;
+    var password = loginUser.password;
 
-    var token = jwt.sign(loginUser.username, process.env.SECRETO);
+    console.log(username);
+    console.log(password);
+
     var message = "Este usuario no existe en la base de datos";
 
     User.findOne(loginUser).then(result => {
 
       if(result) {
-        userLogged = loginUser.username;
-        res.send(JSON.parse('{"token":"'+token+'"}'));
+
+        userLogged = username;
+        const payload = {
+          check:  true
+        };
+        const token = jwt.sign(payload, process.env.SECRETO);
+
+        res.json({
+          mensaje: 'Autenticación correcta',
+          token: token
+        });
+
       }else {
-        res.send(JSON.parse('{"message":"'+message+'"}'));
+        res.json({ mensaje: "Usuario o contraseña incorrectos"})
       }
     })
 
   });
 
-  router.post("/newUser", (req, res) => {
+  rutasProtegidas.use((req, res, next) => {
+    var token = req.headers['authorization'] || (req.body && req.body.access_token) || (req.query && req.query.access_token) || req.headers['x-access-token'] ||  req.headers['access-token'] || req.token;
+
+    console.log(token);
+
+    if (token) {
+      jwt.verify(token, process.env.SECRETO, (err, decoded) => {      
+        if (err) {
+          return res.json({ mensaje: 'Token invalido' });    
+        } else {
+          req.decoded = decoded;
+          next();
+        }
+      });
+    } else {
+      res.send({ 
+        mensaje: 'Token invalido' 
+      });
+    }
+  });
+
+  router.post("/checkToken",rutasProtegidas,(req, res) => {
+    var token = req.headers['authorization'] || (req.body && req.body.access_token) || (req.query && req.query.access_token) || req.headers['x-access-token'] ||  req.headers['access-token'] || req.token;
+
+    if (token) {
+      jwt.verify(token, process.env.SECRETO, (err, decoded) => {      
+        if (err) {
+          return res.json({ mensaje: 'Token invalido' });    
+        } else {
+          req.decoded = decoded;
+          return res.json({ mensaje: 'Token valido' });        
+        }
+      });
+    } else {
+      return res.json({ mensaje: 'Token invalido' });    
+    }
+  })
+
+
+  router.post("/newUser",rutasProtegidas, (req, res) => {
     const user = new User({
       username: req.body.username,
       password: req.body.password,
@@ -183,25 +237,25 @@ var gfs = gridfs(connection.db);
     });
   });
 
-  router.delete("/deleteUser", async (req, res) => {
+  router.delete("/deleteUser",rutasProtegidas, async (req, res) => {
     User.deleteOne({username: req.body.username}).then(result => {
       res.send("Usuario eliminado correctamente");
     })
   });
 
-router.post("/updateUser", async (req, res) => {
+  router.post("/updateUser",rutasProtegidas, async (req, res) => {
     User.findOneAndUpdate({username: req.body.username}, {username: req.body.updateUser.username, password: req.body.updateUser.password}, {new: true}).then(result => {
-        res.send(result);
+      res.send(result);
     })
   });
 
-  router.get("/allEvents", async (req, res) => {
+  router.get("/allEvents",rutasProtegidas, async (req, res) => {
     Event.find().then(result => {
       res.send(result);
     })
   });
 
-  router.get("/allEvents", async (req, res) => {
+  router.get("/allEvents",rutasProtegidas, async (req, res) => {
     Event.find().then(result => {
       res.send(result);
     })
