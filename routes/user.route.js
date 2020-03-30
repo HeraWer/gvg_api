@@ -8,11 +8,6 @@ const rutasProtegidas = express.Router();
 var fs = require('fs'),
 mongo = require('mongodb'),
 gridfs = require('gridfs-stream');
-//Grid = require('gridfs-stream');
-/*gridfs,
-writeStream,
-readStream,
-buffer = "";*/
 
 var GridFsStorage = require('multer-gridfs-storage');
 const mongoose = require('mongoose');
@@ -22,8 +17,6 @@ var upload = multer({ dest: 'uploads/' })
 const path = require('path');
 require("dotenv").config();
 const { Readable } = require('stream');
-//Grid.mongo = mongoose.mongo;
-//var gfs = new Grid("Intercruises",mongoose.mongo);
 const { createReadStream } = require('fs');
 const { createModel } = require('mongoose-gridfs');
 
@@ -39,61 +32,54 @@ const Message = require("../schemas/Message");
 // Conexion a la base de datos.
 const url = "mongodb+srv://" + process.env.atlasUsername + ":" + process.env.atlasPassword + "@projectintercruises-gpdno.mongodb.net/intercruises?retryWrites=true&w=majority";
 
-var conn = mongoose
-.connect(process.env.MONGODB_URI || url , {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-},
-()=> { 
-  console.log("connected to database!")
-  gfs = gridfs(mongoose.connection.db, mongoose.mongo);
+var conn = mongoose.connect(process.env.MONGODB_URI || url , {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  },
+  () => { 
+    console.log("connected to database!")
+    gfs = gridfs(mongoose.connection.db, mongoose.mongo);
 
-})
-.catch((err) => {
-  console.log("No ha podido conectarse a la base de datos");
-  throw err;
+  })
+    .catch((err) => {
+      console.log("No ha podido conectarse a la base de datos");
+      throw err;
 });
 
 var app = express();
-
+// Use bodyParser to format JSONs
 app.use(bodyParser.json()) 
 app.use(bodyParser.urlencoded({ extended: true }))
 
 gridfs.mongo = mongoose.mongo;
 var connection = mongoose.connection;
 
+// Middleware to set the file's name, destination...
 var storage = multer.diskStorage(
 {
   destination: 'uploads/',
   filename: function ( req, file, cb ) {
-        //req.body is empty...
-        //How could I get the new_file_name property sent from client here?
-        cb(null,userLogged+".png");
-      }
-    });
-
+    cb(null,userLogged+".png");
+  }
+});
+// Loading the middleware to Multer 
 upload = multer({ storage: storage })
 
 function writeFile (file) {
-// use default bucket
-const Attachment = createModel();
-// write file to gridfs
-console.log(userLogged);
-const readStream = createReadStream("uploads/"+userLogged+".png");
-const options = ({ filename: userLogged+".png", contentType: 'image/png' });
-Attachment.write(options, readStream, (error, file) => {
-  //=> {_id: ..., filename: ..., ...}
-});
+  // use default bucket
+  const Attachment = createModel();
+  // write file to gridfs
+  console.log(userLogged);
+  const readStream = createReadStream("uploads/"+userLogged+".png");
+  const options = ({ filename: userLogged+".png", contentType: 'image/png' });
+  Attachment.write(options, readStream, (error, file) => {
+    //=> {_id: ..., filename: ..., ...}
+  });
 }
 
-
-
-
-
-  /*
-  --------------------------------------------- AJAX METHODS -------------------------------------------------------------------
-  */
-
+  /******************************************************************************************************************************
+  *-------------------------------------------------------- AJAX METHODS -------------------------------------------------------*
+  ******************************************************************************************************************************/
 
   router.post('/setPhoto', upload.single('avatar'), function (req, res, next) {
     console.log('/setPhoto')
@@ -103,13 +89,13 @@ Attachment.write(options, readStream, (error, file) => {
   router.get("/getPhoto", async(req, res) => {
     console.log('/getPhoto')
     var gfs = gridfs(connection.db);
-// Check file exist on MongoDB
-gfs.exist({ filename: (userLogged+".png") }, function (err, file) {
-  if (err || !file) {
-    res.send('File Not Found');
-  } else {
-    var readstream = gfs.createReadStream({ filename: (userLogged+".png") });
-    readstream.pipe(res);
+    // Check file exist on MongoDB
+    gfs.exist({ filename: (userLogged+".png") }, function (err, file) {
+    if (err || !file) {
+      res.send('File Not Found');
+    } else {
+      var readstream = gfs.createReadStream({ filename: (userLogged+".png") });
+      readstream.pipe(res);
   }
 });
 
@@ -151,7 +137,6 @@ gfs.exist({ filename: (userLogged+".png") }, function (err, file) {
     User.findOne(loginUser).then(result => {
 
       if(result) {
-
         userLogged = username;
         const payload = {
           check:  true
@@ -227,9 +212,7 @@ gfs.exist({ filename: (userLogged+".png") }, function (err, file) {
       unavailability: req.body.unavailability
     });
 
-    user
-    .save()
-    .then(result => {
+    user.save().then(result => {
       res.send("Usuario creado correctamente");
     })
     .catch(err => {
@@ -260,6 +243,5 @@ gfs.exist({ filename: (userLogged+".png") }, function (err, file) {
       res.send(result);
     })
   });
-
 
   module.exports = router;
