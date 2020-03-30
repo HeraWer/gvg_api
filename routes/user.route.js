@@ -2,29 +2,26 @@ const express = require("express");
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 require("dotenv").config();
+const bodyParser = require('body-parser');
+const rutasProtegidas = express.Router(); 
 
-var Grid = require('gridfs-stream');
+var fs = require('fs'),
+mongo = require('mongodb'),
+gridfs = require('gridfs-stream');
+
 var GridFsStorage = require('multer-gridfs-storage');
 const mongoose = require('mongoose');
-var mongo = require('mongodb');
-var Grid = require('gridfs-stream');
 const index = require("../index");
 const multer = require('multer');
 var upload = multer({ dest: 'uploads/' })
-const bodyParser = require('body-parser');
 const path = require('path');
 require("dotenv").config();
-var fs = require('fs');
 const { Readable } = require('stream');
-Grid.mongo = mongoose.mongo;
-var gfs = new Grid("Intercruises",mongoose.mongo);
-//writeStream,
-//readStream,
-buffer = "";
 const { createReadStream } = require('fs');
 const { createModel } = require('mongoose-gridfs');
 
 var userLogged;
+var refreshTokens = {};
 
 const User = require("../schemas/User");
 const Event = require("../schemas/Event");
@@ -35,95 +32,88 @@ const Message = require("../schemas/Message");
 // Conexion a la base de datos.
 const url = "mongodb+srv://" + process.env.atlasUsername + ":" + process.env.atlasPassword + "@projectintercruises-gpdno.mongodb.net/intercruises?retryWrites=true&w=majority";
 
-var conn = mongoose
-.connect(process.env.MONGODB_URI || url , {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-},
-()=> {
-  console.log("connected to database!")
-  gfs = new Grid(mongoose.connection.db, mongoose.mongo);
-})
-.catch((err) => {
-  console.log("No ha podido conectarse a la base de datos");
-  throw err;
+var conn = mongoose.connect(process.env.MONGODB_URI || url , {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  },
+  () => { 
+    console.log("connected to database!")
+    gfs = gridfs(mongoose.connection.db, mongoose.mongo);
+
+  })
+    .catch((err) => {
+      console.log("No ha podido conectarse a la base de datos");
+      throw err;
 });
 
+var app = express();
+// Use bodyParser to format JSONs
+app.use(bodyParser.json()) 
+app.use(bodyParser.urlencoded({ extended: true }))
 
-// Custom bucket para definir ruta archivo y nombre
+gridfs.mongo = mongoose.mongo;
+var connection = mongoose.connection;
+
+// Middleware to set the file's name, destination...
 var storage = multer.diskStorage(
-  {
-    destination: 'uploads/',
-    filename: function ( req, file, cb ) {
-      //req.body is empty...
-      //How could I get the new_file_name property sent from client here?
-      cb(null,userLogged+".png");
-    }
+{
+  destination: 'uploads/',
+  filename: function ( req, file, cb ) {
+    cb(null,userLogged+".png");
+  }
+});
+// Loading the middleware to Multer 
+upload = multer({ storage: storage })
+
+function writeFile (file) {
+  // use default bucket
+  const Attachment = createModel();
+  // write file to gridfs
+  console.log(userLogged);
+  const readStream = createReadStream("uploads/"+userLogged+".png");
+  const options = ({ filename: userLogged+".png", contentType: 'image/png' });
+  Attachment.write(options, readStream, (error, file) => {
+    //=> {_id: ..., filename: ..., ...}
   });
+}
 
-  upload = multer({ storage: storage })
-
-  function writeFile () {
-    // use default bucket
-    const Attachment = createModel();
-    // write file to gridfs
-    console.log(userLogged);
-    const readStream = createReadStream("uploads/"+userLogged+".png");
-    const options = ({ filename: userLogged+".png", contentType: 'image/png' });
-    Attachment.write(options, readStream, (error, file) => {
-      //=> {_id: ..., filename: ..., ...}
-    });
-  }
-
-  function readFile () {
-
-
-  }
-
-  /*
-  --------------------------------------------- AJAX METHODS -------------------------------------------------------------------
-  */
+  /******************************************************************************************************************************
+  *-------------------------------------------------------- AJAX METHODS -------------------------------------------------------*
+  ******************************************************************************************************************************/
 
   router.post('/setPhoto', upload.single('avatar'), function (req, res, next) {
-    // req.file is the `avatar` file
-    // req.body will hold the text fields, if there were any
+    console.log('/setPhoto')
     writeFile(req.file);
   });
 
   router.get("/getPhoto", async(req, res) => {
-    var db = new mongo.Db('Intercruises', new mongo.Server(url));  //if you are using mongoDb directily
-    var gfs = Grid(db,mongo);
-    var rstream = gfs.createReadStream(userLogged+".png");
-    var bufs = [];
-    rstream.on('data', function (chunk) {
-      bufs.push(chunk);
-    }).on('error', function () {
-      res.send();
-    })
-    .on('end', function () { // done
+    console.log('/getPhoto')
+    var gfs = gridfs(connection.db);
+    // Check file exist on MongoDB
+    gfs.exist({ filename: (userLogged+".png") }, function (err, file) {
+    if (err || !file) {
+      res.send('File Not Found');
+    } else {
+      var readstream = gfs.createReadStream({ filename: (userLogged+".png") });
+      readstream.pipe(res);
+  }
+});
 
-      var fbuf = Buffer.concat(bufs);
+});
 
-      var File = (fbuf.toString('base64'));
-
-      res.send(File);
-
-    });
-  });
-
-  router.get("/allUsers", async (req, res) => {
+  router.get("/allUsers",rutasProtegidas, async (req, res) => {
     User.find().then(result => {
       res.send(result);
     })
   });
 
-  router.get("/allRoles", async (req, res) => {
+  router.get("/allRoles",rutasProtegidas, async (req, res) => {
     Role.find().then(result => {
       res.send(result);
     })
   });
 
-  router.post("/getUser", async (req, res) => {
+  router.post("/getUser",rutasProtegidas, async (req, res) => {
     User.findOne({username: req.body.username}).then(result => {
       console.log(result);
       res.send(result);
@@ -136,25 +126,75 @@ var storage = multer.diskStorage(
       password: req.body.password
     })
 
-    console.log(loginUser.username);
-    console.log(loginUser.password);
+    var username = loginUser.username;
+    var password = loginUser.password;
 
-    var token = jwt.sign(loginUser.username, process.env.SECRETO);
+    console.log(username);
+    console.log(password);
+
     var message = "Este usuario no existe en la base de datos";
 
     User.findOne(loginUser).then(result => {
 
       if(result) {
-        userLogged = loginUser.username;
-        res.send(JSON.parse('{"token":"'+token+'"}'));
+        userLogged = username;
+        const payload = {
+          check:  true
+        };
+        const token = jwt.sign(payload, process.env.SECRETO);
+
+        res.json({
+          mensaje: 'Autenticación correcta',
+          token: token
+        });
+
       }else {
-        res.send(JSON.parse('{"message":"'+message+'"}'));
+        res.json({ mensaje: "Usuario o contraseña incorrectos"})
       }
     })
 
   });
 
-  router.post("/newUser", (req, res) => {
+  rutasProtegidas.use((req, res, next) => {
+    var token = req.headers['authorization'] || (req.body && req.body.access_token) || (req.query && req.query.access_token) || req.headers['x-access-token'] ||  req.headers['access-token'] || req.token;
+
+    console.log(token);
+
+    if (token) {
+      jwt.verify(token, process.env.SECRETO, (err, decoded) => {      
+        if (err) {
+          return res.json({ mensaje: 'Token invalido' });    
+        } else {
+          req.decoded = decoded;
+          next();
+        }
+      });
+    } else {
+      res.send({ 
+        mensaje: 'Token invalido' 
+      });
+    }
+  });
+
+  router.post("/checkToken",rutasProtegidas,(req, res) => {
+    var token = req.headers['authorization'] || (req.body && req.body.access_token) || (req.query && req.query.access_token) || req.headers['x-access-token'] ||  req.headers['access-token'] || req.token;
+
+    if (token) {
+      jwt.verify(token, process.env.SECRETO, (err, decoded) => {      
+        if (err) {
+          return res.json({ mensaje: 'Token invalido' });    
+        } else {
+          req.decoded = decoded;
+          return res.json({ mensaje: 'Token valido' });        
+        }
+      });
+    } else {
+      return res.json({ mensaje: 'Token invalido' });    
+    }
+  })
+
+
+  router.post("/newUser",rutasProtegidas, (req, res) => {
     const user = new User({
       username: req.body.username,
       password: req.body.password,
@@ -172,9 +212,7 @@ var storage = multer.diskStorage(
       unavailability: req.body.unavailability
     });
 
-    user
-    .save()
-    .then(result => {
+    user.save().then(result => {
       res.send("Usuario creado correctamente");
     })
     .catch(err => {
@@ -182,29 +220,34 @@ var storage = multer.diskStorage(
     });
   });
 
-  router.delete("/deleteUser", async (req, res) => {
+  router.delete("/deleteUser",rutasProtegidas, async (req, res) => {
     User.deleteOne({username: req.body.username}).then(result => {
       res.send("Usuario eliminado correctamente");
     })
   });
 
+<<<<<<< HEAD
   router.post("/updateUser", async (req, res) => {
     User.findOneAndUpdate({username: req.body.username}, {password: req.body.password}).then(result => {
       res.send("Usuario modificado correctamente")
+=======
+  router.post("/updateUser",rutasProtegidas, async (req, res) => {
+    User.findOneAndUpdate({username: req.body.username}, {username: req.body.updateUser.username, password: req.body.updateUser.password}, {new: true}).then(result => {
+      res.send(result);
+>>>>>>> 2e19a8a6d70d7bab9416daa2ff4714513e56cce7
     })
   });
 
-  router.get("/allEvents", async (req, res) => {
+  router.get("/allEvents",rutasProtegidas, async (req, res) => {
     Event.find().then(result => {
       res.send(result);
     })
   });
 
-  router.get("/allEvents", async (req, res) => {
+  router.get("/allEvents",rutasProtegidas, async (req, res) => {
     Event.find().then(result => {
       res.send(result);
     })
   });
-
 
   module.exports = router;
