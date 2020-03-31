@@ -198,36 +198,36 @@ function writeFile (file) {
     password = req.body.password;
 
     bcrypt.hash(password, BCRYPT_SALT_ROUNDS).then(function(hashedPassword) {
-        password = hashedPassword;
-    }).catch(function(error){
+      password = hashedPassword;  
+      }).then(function() {   
+        const user = new User({
+          username: req.body.username,
+          // Password Encrypted
+          password: password,
+          name: req.body.name,
+          lastname: req.body.lastname,
+          DNI: req.body.dni,
+          birthdate: req.body.birthdate,
+          location: {
+            city: req.body.location.city,
+            adress: req.body.location.address
+          },
+          //        photo: req.body.photo.data,
+          role: req.body.role,
+          active: req.body.active,
+          unavailability: req.body.unavailability
+        });
+    
+        user.save().then(result => {
+          res.send("Usuario creado correctamente");
+        })
+        .catch(err => {
+          res.send("No se a podido crear el usuario");
+        });
+      }).catch(function(error){
         console.log("Error in Bcrypt: ");
         console.log(error);
         next();
-    });
-
-    const user = new User({
-      username: req.body.username,
-      // Password Encrypted
-      password: password,
-      name: req.body.name,
-      lastname: req.body.lastname,
-      DNI: req.body.dni,
-      birthdate: req.body.birthdate,
-      location: {
-        city: req.body.location.city,
-        adress: req.body.location.address
-      },
-      //        photo: req.body.photo.data,
-      role: req.body.role,
-      active: req.body.active,
-      unavailability: req.body.unavailability
-    });
-
-    user.save().then(result => {
-      res.send("Usuario creado correctamente");
-    })
-    .catch(err => {
-      res.send("No se a podido crear el usuario");
     });
   });
 
