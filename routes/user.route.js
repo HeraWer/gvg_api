@@ -235,7 +235,15 @@ router.post("/updateUser", rutasProtegidas, async (req, res) => {
 });
 
 router.get("/allEvents", rutasProtegidas, async (req, res) => {
-  Event.find().then(result => {
+  // Sort by number DESC
+  Event.find({}).sort({'number': -1}).then(result => {
+    res.send(result);
+  })
+});
+
+router.get("/allOffers", rutasProtegidas, async (req, res) => {
+  // Filter events to get only work offers
+  Event.find({'type':'offer'}).then(result => {
     res.send(result);
   })
 });
