@@ -1,14 +1,13 @@
-const express = require("express");
+ const express = require("express");
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 require("dotenv").config();
 const bodyParser = require('body-parser');
 const rutasProtegidas = express.Router(); 
-
+var bcrypt = require('bcrypt');
 var fs = require('fs'),
 mongo = require('mongodb'),
 gridfs = require('gridfs-stream');
-
 var GridFsStorage = require('multer-gridfs-storage');
 const mongoose = require('mongoose');
 const index = require("../index");
@@ -22,6 +21,8 @@ const { createModel } = require('mongoose-gridfs');
 
 var userLogged;
 var refreshTokens = {};
+// SALTS of bcrypt (security level)
+var BCRYPT_SALT_ROUNDS = 12;
 
 const User = require("../schemas/User");
 const Event = require("../schemas/Event");
@@ -193,11 +194,21 @@ function writeFile (file) {
     }
   })
 
-
   router.post("/newUser",rutasProtegidas, (req, res) => {
+    password = req.body.password;
+
+    bcrypt.hash(password, BCRYPT_SALT_ROUNDS).then(function(hashedPassword) {
+        password = hashedPassword;
+    }).catch(function(error){
+        console.log("Error in Bcrypt: ");
+        console.log(error);
+        next();
+    });
+
     const user = new User({
       username: req.body.username,
-      password: req.body.password,
+      // Password Encrypted
+      password: password,
       name: req.body.name,
       lastname: req.body.lastname,
       DNI: req.body.dni,
