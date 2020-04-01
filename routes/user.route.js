@@ -234,6 +234,23 @@ router.post("/updateUser", rutasProtegidas, async (req, res) => {
   })
 });
 
+router.post("/updatePassword", rutasProtegidas, async(req, res) => {
+  console.log("updating password");
+  password = req.body.password;
+  username = req.body.username;
+  // SALT is level of security (12)
+  console.log(username +" -- "+password);
+  bcrypt.hash(password, BCRYPT_SALT_ROUNDS).then(function (hashedPassword) {
+    password = hashedPassword;
+  }).then(function () {
+      User.findOneAndUpdate({username: username}, {password: password}, {new: true}).then(result => {
+      res.send(result);
+    })
+  }).catch(function (msg) {
+    console.log("--ERROR: "+msg);
+  });
+});
+
 router.get("/allEvents", rutasProtegidas, async (req, res) => {
   // Sort by number DESC
   Event.find({}).sort({'number': -1}).then(result => {
