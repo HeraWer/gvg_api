@@ -129,7 +129,6 @@ router.get("/allRoles", rutasProtegidas, async (req, res) => {
 
 router.post("/getUser", rutasProtegidas, async (req, res) => {
   User.findOne({ username: req.body.username }).then(result => {
-    console.log(result);
     res.send(result);
   })
 });
@@ -242,10 +241,14 @@ router.delete("/deleteUser", rutasProtegidas, async (req, res) => {
   })
 });
 
-router.post("/updateUser", rutasProtegidas, async (req, res) => {
-  User.findOneAndUpdate({ username: req.body.username }, { username: req.body.updateUser.username, password: req.body.updateUser.password }, { new: true }).then(result => {
-    res.send(result);
-  })
+router.post("/updateUser", async (req, res) => {
+  bcrypt.hash(req.body.newPassword, BCRYPT_SALT_ROUNDS).then(function (hashedPassword){
+  password = hashedPassword;
+  }).then(function(){
+    User.findOneAndUpdate({ username: req.body.oldUsername }, { username: req.body.newUsername, password: password }, { new: true }).then(result => {
+      res.send(result);
+    })
+  });
 });
 
 router.post("/updatePassword", rutasProtegidas, async(req, res) => {
