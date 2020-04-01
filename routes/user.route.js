@@ -139,6 +139,7 @@ router.post("/login", async (req, res) => {
 
     res.json({
       mensaje: 'Autenticación correcta',
+      username: username,
       token: token
     });
   } catch (error) {
