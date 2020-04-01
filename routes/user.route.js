@@ -152,6 +152,7 @@ router.post("/login", async (req, res) => {
     userLogged = username;
     res.json({
       mensaje: 'Autenticación correcta',
+      username: username,
       token: token
     });
   } catch (error) {
