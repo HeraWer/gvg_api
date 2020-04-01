@@ -12,12 +12,12 @@ var GridFsStorage = require('multer-gridfs-storage');
 const mongoose = require('mongoose');
 const index = require("../index");
 const multer = require('multer');
-var upload = multer({ dest: 'uploads/' })
+var upload = multer({dest: 'uploads/'});
 const path = require('path');
 require("dotenv").config();
-const { Readable } = require('stream');
-const { createReadStream } = require('fs');
-const { createModel } = require('mongoose-gridfs');
+const {Readable} = require('stream');
+const {createReadStream} = require('fs');
+const {createModel} = require('mongoose-gridfs');
 
 var userLogged;
 var refreshTokens = {};
@@ -36,35 +36,32 @@ const url = "mongodb+srv://" + process.env.atlasUsername + ":" + process.env.atl
 var conn = mongoose.connect(process.env.MONGODB_URI || url, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-},
-  () => {
-    console.log("connected to database!")
-    gfs = gridfs(mongoose.connection.db, mongoose.mongo);
+}, () => {
+  console.log("connected to database!")
+  gfs = gridfs(mongoose.connection.db, mongoose.mongo);
 
-  })
-  .catch((err) => {
-    console.log("No ha podido conectarse a la base de datos");
-    throw err;
-  });
+}).catch((err) => {
+  console.log("No ha podido conectarse a la base de datos");
+  throw err;
+});
 
 var app = express();
 // Use bodyParser to format JSONs
 app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.urlencoded({extended: true}))
 
 gridfs.mongo = mongoose.mongo;
 var connection = mongoose.connection;
 
 // Middleware to set the file's name, destination...
-var storage = multer.diskStorage(
-  {
-    destination: 'uploads/',
-    filename: function (req, file, cb) {
-      cb(null, userLogged + ".png");
-    }
-  });
-// Loading the middleware to Multer 
-upload = multer({ storage: storage })
+var storage = multer.diskStorage({
+  destination: 'uploads/',
+  filename: function(req, file, cb) {
+    cb(null, userLogged + ".png");
+  }
+});
+// Loading the middleware to Multer
+upload = multer({storage: storage})
 
 function writeFile(file) {
   // use default bucket
@@ -72,34 +69,50 @@ function writeFile(file) {
   // write file to gridfs
   console.log(userLogged);
   const readStream = createReadStream("uploads/" + userLogged + ".png");
-  const options = ({ filename: userLogged + ".png", contentType: 'image/png' });
+  const options = ({
+    filename: userLogged + ".png",
+    contentType: 'image/png'
+  });
   Attachment.write(options, readStream, (error, file) => {
     //=> {_id: ..., filename: ..., ...}
   });
 }
 
 /******************************************************************************************************************************
-*-------------------------------------------------------- AJAX METHODS -------------------------------------------------------*
-******************************************************************************************************************************/
+  *-------------------------------------------------------- AJAX METHODS -------------------------------------------------------*
+  ******************************************************************************************************************************/
 
-router.post('/setPhoto', upload.single('avatar'), function (req, res, next) {
+router.post('/setPhoto', upload.single('avatar'), function(req, res, next) {
   console.log('/setPhoto')
   writeFile(req.file);
 });
 
-router.get("/getPhoto", async (req, res) => {
-  console.log('/getPhoto')
+router.post("/getPhoto", async (req, res) => {
+  console.log('/getPhoto');
   var gfs = gridfs(connection.db);
+  let nombreUsuario = req.body.username;
+  console.log('nombreUsuario getPhoto ' + nombreUsuario);
   // Check file exist on MongoDB
-  gfs.exist({ filename: (userLogged + ".png") }, function (err, file) {
+  gfs.exist({ filename: (nombreUsuario + ".png") }, function (err, file) {
     if (err || !file) {
+      console.log(err)
       res.send('File Not Found');
     } else {
-      var readstream = gfs.createReadStream({ filename: (userLogged + ".png") });
-      readstream.pipe(res);
+      console.log('llegamoooooos');
+      let bufs = [];
+      let buf;
+      var readstream = gfs.createReadStream({ filename: (nombreUsuario + ".png") });
+      readstream.on('data', function(d) {
+        bufs.push(d);
+        console.log('llegamoooooos2');
+      });
+      readstream.on('end', function() {
+        buf = Buffer.concat(bufs);
+        console.log('llegamoooooos3');
+        res.send('data:image/png;base64,' + buf.toString('base64'));
+      });
     }
   });
-
 });
 
 router.get("/allUsers", rutasProtegidas, async (req, res) => {
@@ -135,9 +148,10 @@ router.post("/login", async (req, res) => {
       check: true
     };
     const token = jwt.sign(payload, process.env.SECRETO);
-
+    userLogged = username;
     res.json({
       mensaje: 'Autenticación correcta',
+      username: username,
       token: token
     });
   } catch (error) {
@@ -237,6 +251,23 @@ router.post("/updateUser", async (req, res) => {
   });
 });
 
+router.post("/updatePassword", rutasProtegidas, async(req, res) => {
+  console.log("updating password");
+  password = req.body.password;
+  username = req.body.username;
+  // SALT is level of security (12)
+  console.log(username +" -- "+password);
+  bcrypt.hash(password, BCRYPT_SALT_ROUNDS).then(function (hashedPassword) {
+    password = hashedPassword;
+  }).then(function () {
+      User.findOneAndUpdate({username: username}, {password: password}, {new: true}).then(result => {
+      res.send(result);
+    })
+  }).catch(function (msg) {
+    console.log("--ERROR: "+msg);
+  });
+});
+
 router.get("/allEvents", rutasProtegidas, async (req, res) => {
   // Sort by number DESC
   Event.find({}).sort({'number': -1}).then(result => {
@@ -247,12 +278,6 @@ router.get("/allEvents", rutasProtegidas, async (req, res) => {
 router.get("/allOffers", rutasProtegidas, async (req, res) => {
   // Filter events to get only work offers
   Event.find({'type':'offer'}).then(result => {
-    res.send(result);
-  })
-});
-
-router.get("/allEvents", rutasProtegidas, async (req, res) => {
-  Event.find().then(result => {
     res.send(result);
   })
 });
