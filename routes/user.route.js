@@ -4,11 +4,10 @@ const jwt = require('jsonwebtoken');
 require("dotenv").config();
 const bodyParser = require('body-parser');
 const rutasProtegidas = express.Router();
-
+var bcrypt = require('bcrypt');
 var fs = require('fs'),
   mongo = require('mongodb'),
   gridfs = require('gridfs-stream');
-
 var GridFsStorage = require('multer-gridfs-storage');
 const mongoose = require('mongoose');
 const index = require("../index");
@@ -22,6 +21,8 @@ const {createModel} = require('mongoose-gridfs');
 
 var userLogged;
 var refreshTokens = {};
+// SALTS of bcrypt (security level)
+var BCRYPT_SALT_ROUNDS = 12;
 
 const User = require("../schemas/User");
 const Event = require("../schemas/Event");
@@ -87,23 +88,26 @@ router.post('/setPhoto', upload.single('avatar'), function(req, res, next) {
 });
 
 router.get("/getPhoto", async (req, res) => {
-  console.log('/getPhoto')
+  console.log('/getPhoto');
   var gfs = gridfs(connection.db);
-  res.contentType('image/png');
   // Check file exist on MongoDB
-  gfs.exist({
-    filename: (userLogged + ".png")
-  }, function(err, file) {
+  gfs.exist({ filename: (userLogged + ".png") }, function (err, file) {
     if (err || !file) {
       res.send('File Not Found');
     } else {
-      var readstream = gfs.createReadStream({
-        filename: (userLogged + ".png")
+      let bufs = [];
+      let buf;
+      var readstream = gfs.createReadStream({ filename: (userLogged + ".png") });
+      readstream.on('data', function(d) {
+        bufs.push(d);
       });
-
-      readstream.pipe(res);
+      readstream.on('end', function() {
+        buf = Buffer.concat(bufs);
+        res.send(buf.toString('base64'));
+      });
     }
   });
+
 });
 
 router.get("/allUsers", rutasProtegidas, async (req, res) => {
@@ -119,38 +123,35 @@ router.get("/allRoles", rutasProtegidas, async (req, res) => {
 });
 
 router.post("/getUser", rutasProtegidas, async (req, res) => {
-  User.findOne({username: req.body.username}).then(result => {
+  User.findOne({ username: req.body.username }).then(result => {
     console.log(result);
     res.send(result);
   })
 });
 
 router.post("/login", async (req, res) => {
-  var loginUser = ({username: req.body.username, password: req.body.password})
-
-  var username = loginUser.username;
-  var password = loginUser.password;
-
-  console.log(username);
-  console.log(password);
-
-  var message = "Este usuario no existe en la base de datos";
-
-  User.findOne(loginUser).then(result => {
-
-    if (result) {
-      userLogged = username;
-      const payload = {
-        check: true
-      };
-      const token = jwt.sign(payload, process.env.SECRETO);
-
-      res.json({mensaje: 'Autenticación correcta', token: token});
-
-    } else {
-      res.json({mensaje: "Usuario o contraseña incorrectos"})
+  username = req.body.username;
+  password = req.body.password;
+  try {
+    var user = await User.findOne({ username: username }).exec();
+    if (!user) {
+      return res.status(400).send({ message: "The username does not exist" });
     }
-  })
+    if (!bcrypt.compareSync(password, user.password)) {
+      return res.status(400).send({ message: "The password is invalid" });
+    }
+    const payload = {
+      check: true
+    };
+    const token = jwt.sign(payload, process.env.SECRETO);
+    userLogged = username;
+    res.json({
+      mensaje: 'Autenticación correcta',
+      token: token
+    });
+  } catch (error) {
+    res.status(500).send("error: " + error);
+  }
 
 });
 
@@ -162,14 +163,16 @@ rutasProtegidas.use((req, res, next) => {
   if (token) {
     jwt.verify(token, process.env.SECRETO, (err, decoded) => {
       if (err) {
-        return res.json({mensaje: 'Token invalido'});
+        return res.json({ mensaje: 'Token invalido' });
       } else {
         req.decoded = decoded;
         next();
       }
     });
   } else {
-    res.send({mensaje: 'Token invalido'});
+    res.send({
+      mensaje: 'Token invalido'
+    });
   }
 });
 
@@ -179,67 +182,76 @@ router.post("/checkToken", rutasProtegidas, (req, res) => {
   if (token) {
     jwt.verify(token, process.env.SECRETO, (err, decoded) => {
       if (err) {
-        return res.json({mensaje: 'Token invalido'});
+        return res.json({ mensaje: 'Token invalido' });
       } else {
         req.decoded = decoded;
-        return res.json({mensaje: 'Token valido'});
+        return res.json({ mensaje: 'Token valido' });
       }
     });
   } else {
-    return res.json({mensaje: 'Token invalido'});
+    return res.json({ mensaje: 'Token invalido' });
   }
 })
 
 router.post("/newUser", rutasProtegidas, (req, res) => {
-  const user = new User({
-    username: req.body.username,
-    password: req.body.password,
-    name: req.body.name,
-    lastname: req.body.lastname,
-    DNI: req.body.dni,
-    birthdate: req.body.birthdate,
-    location: {
-      city: req.body.location.city,
-      adress: req.body.location.address
-    },
-    //        photo: req.body.photo.data,
-    role: req.body.role,
-    active: req.body.active,
-    unavailability: req.body.unavailability
-  });
+  password = req.body.password;
+  // SALT is level of security (12)
+  bcrypt.hash(password, BCRYPT_SALT_ROUNDS).then(function (hashedPassword) {
+    password = hashedPassword;
+  }).then(function () {
+    const user = new User({
+      username: req.body.username,
+      // Password Encrypted
+      password: password,
+      name: req.body.name,
+      lastname: req.body.lastname,
+      DNI: req.body.dni,
+      birthdate: req.body.birthdate,
+      location: {
+        city: req.body.location.city,
+        adress: req.body.location.address
+      },
+      //        photo: req.body.photo.data,
+      role: req.body.role,
+      active: req.body.active,
+      unavailability: req.body.unavailability
+    });
 
-  user.save().then(result => {
-    res.send("Usuario creado correctamente");
-  }).catch(err => {
-    res.send("No se a podido crear el usuario");
+    user.save().then(result => {
+      res.send("Usuario creado correctamente");
+    })
+      .catch(err => {
+        res.send("No se a podido crear el usuario");
+      });
+  }).catch(function (error) {
+    console.log("Error in Bcrypt: ");
+    console.log(error);
+    next();
   });
 });
 
 router.delete("/deleteUser", rutasProtegidas, async (req, res) => {
-  User.deleteOne({username: req.body.username}).then(result => {
+  User.deleteOne({ username: req.body.username }).then(result => {
     res.send("Usuario eliminado correctamente");
   })
 });
 
 router.post("/updateUser", rutasProtegidas, async (req, res) => {
-  User.findOneAndUpdate({
-    username: req.body.username
-  }, {
-    username: req.body.updateUser.username,
-    password: req.body.updateUser.password
-  }, {new: true}).then(result => {
+  User.findOneAndUpdate({ username: req.body.username }, { username: req.body.updateUser.username, password: req.body.updateUser.password }, { new: true }).then(result => {
     res.send(result);
   })
 });
 
 router.get("/allEvents", rutasProtegidas, async (req, res) => {
-  Event.find().then(result => {
+  // Sort by number DESC
+  Event.find({}).sort({'number': -1}).then(result => {
     res.send(result);
   })
 });
 
-router.get("/allEvents", rutasProtegidas, async (req, res) => {
-  Event.find().then(result => {
+router.get("/allOffers", rutasProtegidas, async (req, res) => {
+  // Filter events to get only work offers
+  Event.find({'type':'offer'}).then(result => {
     res.send(result);
   })
 });
