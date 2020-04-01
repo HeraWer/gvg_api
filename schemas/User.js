@@ -19,7 +19,7 @@ var userSchema = mongoose.Schema ({
         postal_code: String,
         adress: String
     },
-    photo: {data: Buffer, contentType: String},
+    photo: String,
     role: {
         role_name: String
     },

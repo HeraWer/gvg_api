@@ -12,12 +12,12 @@ var GridFsStorage = require('multer-gridfs-storage');
 const mongoose = require('mongoose');
 const index = require("../index");
 const multer = require('multer');
-var upload = multer({ dest: 'uploads/' })
+var upload = multer({dest: 'uploads/'});
 const path = require('path');
 require("dotenv").config();
-const { Readable } = require('stream');
-const { createReadStream } = require('fs');
-const { createModel } = require('mongoose-gridfs');
+const {Readable} = require('stream');
+const {createReadStream} = require('fs');
+const {createModel} = require('mongoose-gridfs');
 
 var userLogged;
 var refreshTokens = {};
@@ -36,35 +36,32 @@ const url = "mongodb+srv://" + process.env.atlasUsername + ":" + process.env.atl
 var conn = mongoose.connect(process.env.MONGODB_URI || url, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-},
-  () => {
-    console.log("connected to database!")
-    gfs = gridfs(mongoose.connection.db, mongoose.mongo);
+}, () => {
+  console.log("connected to database!")
+  gfs = gridfs(mongoose.connection.db, mongoose.mongo);
 
-  })
-  .catch((err) => {
-    console.log("No ha podido conectarse a la base de datos");
-    throw err;
-  });
+}).catch((err) => {
+  console.log("No ha podido conectarse a la base de datos");
+  throw err;
+});
 
 var app = express();
 // Use bodyParser to format JSONs
 app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.urlencoded({extended: true}))
 
 gridfs.mongo = mongoose.mongo;
 var connection = mongoose.connection;
 
 // Middleware to set the file's name, destination...
-var storage = multer.diskStorage(
-  {
-    destination: 'uploads/',
-    filename: function (req, file, cb) {
-      cb(null, userLogged + ".png");
-    }
-  });
-// Loading the middleware to Multer 
-upload = multer({ storage: storage })
+var storage = multer.diskStorage({
+  destination: 'uploads/',
+  filename: function(req, file, cb) {
+    cb(null, userLogged + ".png");
+  }
+});
+// Loading the middleware to Multer
+upload = multer({storage: storage})
 
 function writeFile(file) {
   // use default bucket
@@ -72,31 +69,42 @@ function writeFile(file) {
   // write file to gridfs
   console.log(userLogged);
   const readStream = createReadStream("uploads/" + userLogged + ".png");
-  const options = ({ filename: userLogged + ".png", contentType: 'image/png' });
+  const options = ({
+    filename: userLogged + ".png",
+    contentType: 'image/png'
+  });
   Attachment.write(options, readStream, (error, file) => {
     //=> {_id: ..., filename: ..., ...}
   });
 }
 
 /******************************************************************************************************************************
-*-------------------------------------------------------- AJAX METHODS -------------------------------------------------------*
-******************************************************************************************************************************/
+  *-------------------------------------------------------- AJAX METHODS -------------------------------------------------------*
+  ******************************************************************************************************************************/
 
-router.post('/setPhoto', upload.single('avatar'), function (req, res, next) {
+router.post('/setPhoto', upload.single('avatar'), function(req, res, next) {
   console.log('/setPhoto')
   writeFile(req.file);
 });
 
 router.get("/getPhoto", async (req, res) => {
-  console.log('/getPhoto')
+  console.log('/getPhoto');
   var gfs = gridfs(connection.db);
   // Check file exist on MongoDB
   gfs.exist({ filename: (userLogged + ".png") }, function (err, file) {
     if (err || !file) {
       res.send('File Not Found');
     } else {
+      let bufs = [];
+      let buf;
       var readstream = gfs.createReadStream({ filename: (userLogged + ".png") });
-      readstream.pipe(res);
+      readstream.on('data', function(d) {
+        bufs.push(d);
+      });
+      readstream.on('end', function() {
+        buf = Buffer.concat(bufs);
+        res.send(buf.toString('base64'));
+      });
     }
   });
 
@@ -136,7 +144,7 @@ router.post("/login", async (req, res) => {
       check: true
     };
     const token = jwt.sign(payload, process.env.SECRETO);
-
+    userLogged = username;
     res.json({
       mensaje: 'Autenticación correcta',
       username: username,
@@ -262,12 +270,6 @@ router.get("/allEvents", rutasProtegidas, async (req, res) => {
 router.get("/allOffers", rutasProtegidas, async (req, res) => {
   // Filter events to get only work offers
   Event.find({'type':'offer'}).then(result => {
-    res.send(result);
-  })
-});
-
-router.get("/allEvents", rutasProtegidas, async (req, res) => {
-  Event.find().then(result => {
     res.send(result);
   })
 });
