@@ -87,27 +87,32 @@ router.post('/setPhoto', upload.single('avatar'), function(req, res, next) {
   writeFile(req.file);
 });
 
-router.get("/getPhoto", async (req, res) => {
+router.post("/getPhoto", async (req, res) => {
   console.log('/getPhoto');
   var gfs = gridfs(connection.db);
+  let nombreUsuario = req.body.username;
+  console.log('nombreUsuario getPhoto ' + nombreUsuario);
   // Check file exist on MongoDB
-  gfs.exist({ filename: (userLogged + ".png") }, function (err, file) {
+  gfs.exist({ filename: (nombreUsuario + ".png") }, function (err, file) {
     if (err || !file) {
+      console.log(err)
       res.send('File Not Found');
     } else {
+      console.log('llegamoooooos');
       let bufs = [];
       let buf;
-      var readstream = gfs.createReadStream({ filename: (userLogged + ".png") });
+      var readstream = gfs.createReadStream({ filename: (nombreUsuario + ".png") });
       readstream.on('data', function(d) {
         bufs.push(d);
+        console.log('llegamoooooos2');
       });
       readstream.on('end', function() {
         buf = Buffer.concat(bufs);
-        res.send(buf.toString('base64'));
+        console.log('llegamoooooos3');
+        res.send('data:image/png;base64,' + buf.toString('base64'));
       });
     }
   });
-
 });
 
 router.get("/allUsers", rutasProtegidas, async (req, res) => {
