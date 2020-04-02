@@ -83,7 +83,37 @@ function writeFile(file) {
   ******************************************************************************************************************************/
 
 router.post('/setPhoto', upload.single('avatar'), function(req, res, next) {
-  console.log('/setPhoto')
+  console.log('/setPhoto');
+  var gfs = gridfs(connection.db);
+  let nombreUsuario = req.body.username;
+  console.log('nombreUsuario getPhoto---- ' + userLogged);
+
+  gfs.remove({ filename: (userLogged + ".png") }, function (err) {
+    if (err) return handleError(err);
+    console.log('success');
+  });
+
+  // Check file exist on MongoDB
+  gfs.exist({ filename: (nombreUsuario + ".png") }, function (err, file) {
+    if (err || !file) {
+      console.log(err)
+      res.send('File Not Found');
+    } else {
+      console.log('llegamoooooos');
+      let bufs = [];
+      let buf;
+      var readstream = gfs.createReadStream({ filename: (nombreUsuario + ".png") });
+      readstream.on('data', function(d) {
+        bufs.push(d);
+        console.log('llegamoooooos2');
+      });
+      readstream.on('end', function() {
+        buf = Buffer.concat(bufs);
+        console.log('llegamoooooos3');
+        res.send('data:image/png;base64,' + buf.toString('base64'));
+      });
+    }
+  });
   writeFile(req.file);
 });
 
@@ -183,7 +213,7 @@ rutasProtegidas.use((req, res, next) => {
 
 router.post("/checkToken", rutasProtegidas, (req, res) => {
   var token = req.headers['authorization'] || (req.body && req.body.access_token) || (req.query && req.query.access_token) || req.headers['x-access-token'] || req.headers['access-token'] || req.token;
-
+  userLogged = req.body.username;
   if (token) {
     jwt.verify(token, process.env.SECRETO, (err, decoded) => {
       if (err) {
