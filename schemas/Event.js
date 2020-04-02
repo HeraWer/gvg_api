@@ -31,8 +31,9 @@ const Event = mongoose.Schema({
 */
 
 var eventSchema = mongoose.Schema ({
-	/*number: {type: Number},
-    publisher: {type: Schema.Types.ObjectId, ref: 'User'},
+	number: {type: Number},
+    publisher: [{type: Schema.Types.ObjectId, ref: 'User'}],
+    type: {type: String},
     title: {type: String},
     description: {type: String},
     date_published: {type: Date},
@@ -40,7 +41,7 @@ var eventSchema = mongoose.Schema ({
 	staffs: [{type: Schema.Types.ObjectId, ref: 'User'}],
 	seats: {type: Number},
 	location: {type: Schema.Types.ObjectId, ref: 'Location'},
-	schedule: [{day: String, hour_start: String, hour_end: String}]*/
+	schedule: [{day: String, hour_start: String, hour_end: String}]
 });
 
 module.exports = mongoose.model("Event", eventSchema);

@@ -98,17 +98,14 @@ router.post("/getPhoto", async (req, res) => {
       console.log(err)
       res.send('File Not Found');
     } else {
-      console.log('llegamoooooos');
       let bufs = [];
       let buf;
       var readstream = gfs.createReadStream({ filename: (nombreUsuario + ".png") });
       readstream.on('data', function(d) {
         bufs.push(d);
-        console.log('llegamoooooos2');
       });
       readstream.on('end', function() {
         buf = Buffer.concat(bufs);
-        console.log('llegamoooooos3');
         res.send('data:image/png;base64,' + buf.toString('base64'));
       });
     }
@@ -278,6 +275,14 @@ router.get("/allEvents", rutasProtegidas, async (req, res) => {
 router.get("/allOffers", rutasProtegidas, async (req, res) => {
   // Filter events to get only work offers
   Event.find({'type':'offer'}).then(result => {
+    res.send(result);
+  })
+});
+
+router.post("/apuntarseAEvent", rutasProtegidas, async (req, res) => {
+  console.log(req.body.user);
+  Event.findOneAndUpdate({number:req.body.number}, {$push: {'staffs': req.body.user}}).then(result => {
+    console.log(result);
     res.send(result);
   })
 });
