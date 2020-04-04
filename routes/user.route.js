@@ -294,6 +294,7 @@ router.post("/updatePassword", rutasProtegidas, async(req, res) => {
     console.log("--ERROR: "+msg);
   });
 });
+-+
 
 router.get("/allEvents", rutasProtegidas, async (req, res) => {
   // Sort by number DESC
