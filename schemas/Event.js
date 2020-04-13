@@ -32,7 +32,10 @@ const Event = mongoose.Schema({
 
 var eventSchema = mongoose.Schema ({
 	number: {type: Number},
-    publisher: [{type: Schema.Types.ObjectId, ref: 'User'}],
+    publisher: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
     type: {type: String},
     title: {type: String},
     description: {type: String},
@@ -40,7 +43,13 @@ var eventSchema = mongoose.Schema ({
 	active: {type: Boolean},
 	staffs: [{type: Schema.Types.ObjectId, ref: 'User'}],
 	seats: {type: Number},
-	location: {type: Schema.Types.ObjectId, ref: 'Location'},
+	location: {
+        longitude: {type: String},
+        latitude: {type: String},
+        city: {type: String},
+        postal_code: {type: String},
+        address: {type: String}
+    },
 	schedule: [{day: String, hour_start: String, hour_end: String}]
 });
 
