@@ -279,6 +279,17 @@ router.post("/updateUser", async (req, res) => {
   });
 });
 
+router.post("/updateFullUser", async (req, res) => {
+  bcrypt.hash(req.body.password, BCRYPT_SALT_ROUNDS).then(function (hashedPassword){
+  password = hashedPassword;
+  }).then(function(){
+    console.log(req.body);
+    User.findOneAndUpdate({ username: req.body.usernameOld }, { username: req.body.username, name: req.body.name, lastname: req.body.lastname, birthdate: req.body.birthdate, dni: req.body.dni, role: req.body.role}, { new: true }).then(result => {
+      res.send(result);
+    })
+  });
+});
+
 router.post("/updatePassword", rutasProtegidas, async(req, res) => {
   console.log("updating password");
   password = req.body.password;
