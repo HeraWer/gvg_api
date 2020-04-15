@@ -17,14 +17,15 @@ var userSchema = mongoose.Schema ({
         latitude: String,
         city: String,
         postal_code: String,
-        adress: String
+        address: String
     },
     photo: String,
     role: {
         role_name: String
     },
     active: {type: Boolean},
-    unavailability: {type: Boolean}
+    unavailability: {type: Boolean},
+    notifications: {type: Boolean}
 });
 
 
