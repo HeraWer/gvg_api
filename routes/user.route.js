@@ -246,7 +246,8 @@ router.post("/newUser", rutasProtegidas, (req, res) => {
       //        photo: req.body.photo.data,
       role: req.body.role,
       active: req.body.active,
-      unavailability: req.body.unavailability
+      unavailability: req.body.unavailability,
+      notifications: true
     });
 
     user.save().then(result => {
@@ -278,23 +279,47 @@ router.post("/updateUser", async (req, res) => {
   });
 });
 
+router.post("/updateFullUser", async (req, res) => {
+  bcrypt.hash(req.body.password, BCRYPT_SALT_ROUNDS).then(function (hashedPassword){
+  password = hashedPassword;
+  }).then(function(){
+    console.log(req.body);
+    User.findOneAndUpdate({ username: req.body.usernameOld }, { username: req.body.username, name: req.body.name, lastname: req.body.lastname, birthdate: req.body.birthdate, dni: req.body.dni, role: req.body.role}, { new: true }).then(result => {
+      res.send(result);
+    })
+  });
+});
+
 router.post("/updatePassword", rutasProtegidas, async(req, res) => {
   console.log("updating password");
   password = req.body.password;
   username = req.body.username;
+  address = req.body.address;
+  password2 = req.body.password;
   // SALT is level of security (12)
-  console.log(username +" -- "+password);
-  bcrypt.hash(password, BCRYPT_SALT_ROUNDS).then(function (hashedPassword) {
-    password = hashedPassword;
-  }).then(function () {
-      User.findOneAndUpdate({username: username}, {password: password}, {new: true}).then(result => {
-      res.send(result);
-    })
-  }).catch(function (msg) {
-    console.log("--ERROR: "+msg);
-  });
+  console.log(username +" -- "+ password + " -- " + address);
+
+    bcrypt.hash(password, BCRYPT_SALT_ROUNDS).then(function (hashedPassword) {
+      password = hashedPassword;
+    }).then(async function () {
+      User.findOne
+      if(password2 == "sindefinir"){
+        console.log("SINDEFINIR");
+        await User.findOneAndUpdate({username: username}, {$set: {'location.address': address}}).then(result => {
+          res.send(result);
+        })
+      }else {
+        User.findOneAndUpdate({username: username}, {password: password}, {new: true}).then(result => {
+          res.send(result);
+        })
+      }
+        
+    }).catch(function (msg) {
+      console.log("--ERROR: "+msg);
+    });
+  
 });
--+
+
 
 router.get("/allEvents", rutasProtegidas, async (req, res) => {
   // Sort by number DESC
@@ -333,5 +358,12 @@ router.post("/apuntarseAEvent", rutasProtegidas, async (req, res) => {
     res.send(result);
   })
 });
+
+router.post("/updateNotifications", rutasProtegidas, async (req, res) => {
+  console.log("HELLO")
+  User.findOneAndUpdate({username: req.body.username}, {notifications: req.body.notifications}).then(result => {
+    res.send(result);
+  });
+})
 
 module.exports = router;
