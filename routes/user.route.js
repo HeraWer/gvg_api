@@ -328,11 +328,34 @@ router.get("/allEvents", rutasProtegidas, async (req, res) => {
   })
 });
 
+router.post("/getUserById", rutasProtegidas, async (req, res) => {
+  var query = { _id: req.body._id };
+  console.log(query);
+  User.findById(query).then(result => {
+    res.send(result);
+  });
+});
+
 router.post("/getUserEvents", rutasProtegidas, async (req, res) => {
   console.log('init getUserEvents');
   Event.find({'type':'activity','staffs' : req.body._id}).then(result => {
+     res.send(result);
+  });
+});
+
+router.post("/getUserOffers", rutasProtegidas, async (req, res) => {
+  console.log('init getUserOffers');
+  Event.find({'type':'offer','staffs' : req.body._id}).then(result => {
     console.log('devolviendo: ' + result);
      res.send(result);
+  });
+});
+
+router.post("/getUserJobs_Id", rutasProtegidas, async (req, res) => {
+  console.log('init getUserJobs_Id');
+  User.find({'username':req.body.username}).then(result => {
+    console.log('devolviendo: ' + result);
+     res.send(result[0]._id);
   });
 });
 

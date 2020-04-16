@@ -25,8 +25,7 @@ var userSchema = mongoose.Schema ({
     },
     active: {type: Boolean},
     unavailability: {type: Boolean},
-    notifications: {type: Boolean}
-});
+    notifications: {type: Boolean}});
 
 
 
