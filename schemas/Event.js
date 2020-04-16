@@ -9,34 +9,13 @@ var Schema = mongoose.Schema;
 
 // Esquemas donde se mapea sobre las collections de mongo atlas
 
-/*
-const Event = mongoose.Schema({
-    id: {type: String},
-    schedule: {type: Number},
-    location: {type: String},
-    description: {type: String},
-    avaliableStaff: {type: String},
-    active: {type: Boolean},
-}, {versionKey: false});
-*/
-/*
-const Event = mongoose.Schema({
-    //id: {type: String},
-    //schedule: {type: Number},
-    //location: {type: String},
-    description: {type: String},
-    //avaliableStaff: {type: String},
-    //active: {type: Boolean},
-}, {versionKey: false});
-*/
-
 var eventSchema = mongoose.Schema ({
 	number: {type: Number},
-    publisher: {type: Schema.Types.ObjectId, ref: 'User'},
+    publisher: {type: String},
     type: {type: String},
     title: {type: String},
     description: {type: String},
-    date_published: {type: Date},
+    date_published: {type: Date, default: Date.now},
 	active: {type: Boolean},
 	staffs: [{type: Schema.Types.ObjectId, ref: 'User'}],
 	seats: {type: Number},

@@ -325,7 +325,7 @@ router.get("/allEvents", rutasProtegidas, async (req, res) => {
   // Sort by number DESC
   Event.find({}).sort({'number': -1}).then(result => {
     res.send(result);
-  })
+  });
 });
 
 router.post("/getUserEvents", rutasProtegidas, async (req, res) => {
@@ -364,6 +364,16 @@ router.post("/updateNotifications", rutasProtegidas, async (req, res) => {
   User.findOneAndUpdate({username: req.body.username}, {notifications: req.body.notifications}).then(result => {
     res.send(result);
   });
-})
+});
+
+router.post("/createEvent", rutasProtegidas, async (req, res) => {
+
+  Event.find({}).sort({'number': -1}).limit(1).then(result => {
+    req.body.number = result[0].number + 1;
+    Event.updateOne(req.body).then(result => {
+      res.send(result);
+    });
+  });  
+});
 
 module.exports = router;
