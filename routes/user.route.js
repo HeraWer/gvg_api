@@ -303,6 +303,22 @@ router.get("/allEvents", rutasProtegidas, async (req, res) => {
   })
 });
 
+router.post("/getUserEvents", rutasProtegidas, async (req, res) => {
+  console.log('init getUserEvents');
+  Event.find({'type':'activity','staffs' : req.body._id}).then(result => {
+    console.log('devolviendo: ' + result);
+     res.send(result);
+  });
+});
+
+router.post("/getUser_Id", rutasProtegidas, async (req, res) => {
+  console.log('init getUser_Id');
+  User.find({'username':req.body.username}).then(result => {
+    console.log('devolviendo: ' + result);
+     res.send(result[0]._id);
+  });
+});
+
 router.get("/allOffers", rutasProtegidas, async (req, res) => {
   // Filter events to get only work offers
   Event.find({'type':'offer'}).then(result => {

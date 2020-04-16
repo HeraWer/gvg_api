@@ -32,7 +32,7 @@ const Event = mongoose.Schema({
 
 var eventSchema = mongoose.Schema ({
 	number: {type: Number},
-    publisher: [{type: Schema.Types.ObjectId, ref: 'User'}],
+    publisher: {type: Schema.Types.ObjectId, ref: 'User'},
     type: {type: String},
     title: {type: String},
     description: {type: String},
