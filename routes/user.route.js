@@ -393,10 +393,15 @@ router.post("/createEvent", rutasProtegidas, async (req, res) => {
 
   Event.find({}).sort({'number': -1}).limit(1).then(result => {
     req.body.number = result[0].number + 1;
-    Event.updateOne(req.body).then(result => {
-      res.send(result);
-    });
+    
+    vaina(req.body,res);
+    
   });  
 });
+function vaina(hola,res){
+  Event.create(hola).then(result => {
+    res.send(result);
+  });
+}
 
 module.exports = router;
